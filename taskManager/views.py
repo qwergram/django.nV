@@ -172,6 +172,7 @@ def upload(request, project_id):
     if request.method == 'POST':
 
         proj = Project.objects.get(pk=project_id)
+        if request.user not in proj.user_assigned.all(): return HttpResponse("You aren't permitted to do that")
         form = ProjectFileForm(request.POST, request.FILES)
 
         if form.is_valid():
@@ -370,7 +371,8 @@ def project_edit(request, project_id):
 def project_delete(request, project_id):
     # IDOR
     project = Project.objects.get(pk=project_id)
-    project.delete()
+    if request.user in project.user_assigned.all():
+        project.delete()
     return redirect('/taskManager/dashboard')
 
 # A10: Open Redirect
@@ -574,7 +576,8 @@ def note_delete(request, project_id, task_id, note_id):
     if proj is not None:
         if task is not None and task.project == proj:
             if note is not None and note.task == task:
-                note.delete()
+                if request.user in proj.user_assigned.all()
+                    note.delete()
 
     return redirect('/taskManager/' + project_id + '/' + task_id)
 
@@ -702,7 +705,7 @@ def profile_by_id(request, user_id):
 
     if request.method == 'POST':
         form = ProfileForm(request.POST, request.FILES)
-        if form.is_valid():
+        if form.is_valid() and request.user is user:
             print("made it!")
             if request.POST.get('username') != user.username:
                 user.username = request.POST.get('username')
