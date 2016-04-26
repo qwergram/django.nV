@@ -576,7 +576,7 @@ def note_delete(request, project_id, task_id, note_id):
     if proj is not None:
         if task is not None and task.project == proj:
             if note is not None and note.task == task:
-                if request.user in proj.user_assigned.all()
+                if request.user in proj.user_assigned.all():
                     note.delete()
 
     return redirect('/taskManager/' + project_id + '/' + task_id)
