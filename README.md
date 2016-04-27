@@ -71,3 +71,11 @@ associated with the task at all.
 `DEBUG = True` That's how we found most of our urls. And 500 errors aren't masked.
 We should set `DEBUG = False`, however I don't want to setup nginx or apache to serve
 my static files, so I'll leave it to true for now.
+
+
+### *Sensitive Data Exposure*
+
+In this security Vulnerability, I discovered that the hashes in the database are stored
+as md5 hashes with only 1 iteration. According to wikipedia and django, that is very
+insecure. To solve this, we must use another hashing algorithm: `PBKDF2PasswordHasher`.
+We can add that to settings.py and fix this Vulnerability.
