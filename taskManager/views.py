@@ -699,7 +699,6 @@ def profile(request):
 # A8: Cross Site Request Forgery (CSRF)
 
 
-@csrf_exempt
 def profile_by_id(request, user_id):
     user = User.objects.get(pk=user_id)
 
@@ -728,7 +727,6 @@ def profile_by_id(request, user_id):
 
 # A8: Cross Site Request Forgery (CSRF)
 
-@csrf_exempt
 def reset_password(request):
 
     if request.method == 'POST':
@@ -768,7 +766,6 @@ def reset_password(request):
 
 # Vuln: Username Enumeration
 
-@csrf_exempt
 def forgot_password(request):
 
     if request.method == 'POST':
@@ -802,7 +799,6 @@ def forgot_password(request):
 
 # A8: Cross Site Request Forgery (CSRF)
 
-@csrf_exempt
 def change_password(request):
 
     if request.method == 'POST':
