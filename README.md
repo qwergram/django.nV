@@ -79,3 +79,9 @@ In this security Vulnerability, I discovered that the hashes in the database are
 as md5 hashes with only 1 iteration. According to wikipedia and django, that is very
 insecure. To solve this, we must use another hashing algorithm: `PBKDF2PasswordHasher`.
 We can add that to settings.py and fix this Vulnerability.
+
+
+### *Missing Function Level Access Control*
+
+The get requests to restricted views prevent unauthorized access to certain
+pages, but the post requests still go through.
