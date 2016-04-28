@@ -84,4 +84,12 @@ We can add that to settings.py and fix this Vulnerability.
 ### *Missing Function Level Access Control*
 
 The get requests to restricted views prevent unauthorized access to certain
-pages, but the post requests still go through.
+pages, but the post requests still go through. The solution was to check if
+`user.is_authenticated()` and redirect the user if they aren't.
+
+
+### *Cross-site Request Forgery*
+
+This is kind of dumb... There is a `{% csrf_token %}` included on all the views
+that do post requests, but there is a `@csrf_exempt` property on all the views
+that the forms post to. I just removed the decorators.
