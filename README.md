@@ -1,95 +1,49 @@
-## Vulnerability Report
-### *Reviewer 1:* Norton Pengra
-### *Reviewer 2:* Kent Ross
-### *Date:* April 22 2016
+django.nV
+=========
 
-## Reviewing nVisium Task Manager
+django.nV is a purposefully vulnerable Django application provided by [nVisium](https://www.nvisium.com/).
 
-## Vulnerability 1
+###System Requirements & Setup###
 
-First of all, debug is set to True. So, that's kind of a problem.
-When we force 404 errors, we can see every single URL route, which let's us
-hit whatever we want there.
-
-### *Injection*
-
-We searched around forms.py to find that someone used `%s`.
-We then tried the following: `test_pic', (select password from auth_user where username = admin), 9);--`
-
-And got a `ProgrammingError` which refers to database operations, which means we successfully interacted with the database.
-This is what the code originally said:
-   `curs = connection.cursor()`
-            `curs.execute(`
-                `"insert into taskManager_file ('name','path','project_id') values ('%s','%s',%s)" %`
-                `(name, upload_path, project_id))`
-This is what the safer changed it to:
-    `    file = File(`
-                `name=name,`
-                `path=upload_path,`
-                `project=proj`
-            `)`
-
-### *Broken Auth*
-
-After searching around the source code again, we discovered that the developer
-created a `ModelForm` where the `Model` was the `User`. They only defined an `exclude` attribute
-but failed to exclude `is_superuser` and `is_staff`. Which means any form submitted with injected html
-that looks something like: `<input type="checkbox" name="is_staff"><input type="checkbox" name="is_superuser">`
-will create an admin user that anyone can use. That's bad.
-
-We can easily change the code in forms.py from:
+First, make sure Python 3.4+ is installed on your machine. On OSX, this can be installed with Homebrew (eg. `brew install python3`). If you receive an error about conflicting PYTHONPATH, try updating the variable to reflect your python version.
 
 ```
-class UserForm(forms.ModelForm):
-    """ User registration form """
-    class Meta:
-        model = User
-        exclude = ['groups', 'user_permissions', 'last_login', 'date_joined', 'is_active']
-
+export PYTHONPATH="/usr/local/lib/python3.4/site-packages"
 ```
 
-Replace the `exclude = [..]` with `fields = ['username', 'password', 'email', 'first_name', 'last_name']`
+Before using django.nV, you'll also need to install virtualenv. You should be able to use `pip install virtualenv`, using the pip package manager, to install it. On most systems, pip should be installed alongside python.
 
-### *XSS*
+To set up the repository, use `virtualenv -p python3 venv`, which will create a virtualenv using Python 3. To enter this environment, run `source venv/bin/activate`. You should see your $PS1 update to include `(venv)` to remind you that you are in the virtual environment. You can also leave the environment by simply typing `deactivate`.
 
-XSS refers to people writing unwanted html on a page and then the page actually rendering it.
-The instance we found was there was a `|safe` in the html templates after the username.
-We then typed `<script>alert("I love waffles")</script>` as the username and sure enough,
-a javascript alert popped up anywhere the username was displayed. The solution was to
-remove the `|safe`.
+###Installation of Dependencies###
 
-### *IDOR Insecure Direct Object Reference*
+To install the dependencies, simply run `pip install -r requirements.txt`.
 
-In the source code, the  route does not actually check if the user owns
-the task or project, meaning anyone who can guess the project id can edit and delete.
-We can add `if request.user in task.user_assigned.all()` to the check if the user is
-associated with the task at all.
+###Database Setup###
 
+django.nV provides you with a script automatically creates the database as well as populates it with data. This script is titled `reset_db.sh`. django.nV does not ship with the database, so in order to run the application properly, you'll need to use this script:
 
-### *Security Misconfiguration*
+    ./reset_db.sh
 
-`DEBUG = True` That's how we found most of our urls. And 500 errors aren't masked.
-We should set `DEBUG = False`, however I don't want to setup nginx or apache to serve
-my static files, so I'll leave it to true for now.
+You can also use the same script to reset the database if you make any changes.
 
+###Running the application###
+To run the app in its application folder type:
 
-### *Sensitive Data Exposure*
+    ./runapp.sh
 
-In this security Vulnerability, I discovered that the hashes in the database are stored
-as md5 hashes with only 1 iteration. According to wikipedia and django, that is very
-insecure. To solve this, we must use another hashing algorithm: `PBKDF2PasswordHasher`.
-We can add that to settings.py and fix this Vulnerability.
+You should then be able to access the web interface at `http://localhost:8000/`.
 
+###Tutorials###
 
-### *Missing Function Level Access Control*
+django.nV comes with a series of writeups for the vulnerabilities we've added to the code. Each tutorial comes with a description of the vuln, a hint to where to find it, and then the exact bug and how it could be remedied.
 
-The get requests to restricted views prevent unauthorized access to certain
-pages, but the post requests still go through. The solution was to check if
-`user.is_authenticated()` and redirect the user if they aren't.
+You can access these tutorials within the app at `http://localhost:8000/taskManager/tutorials/`, or by clicking on the 'Tutorials' link in the top-right of the web interface.
 
+### Mail ###
 
-### *Cross-site Request Forgery*
+The only mail sent by the app is for the "Forgot Password" feature. You can use the built-in Python mailserver for those messages.
 
-This is kind of dumb... There is a `{% csrf_token %}` included on all the views
-that do post requests, but there is a `@csrf_exempt` property on all the views
-that the forms post to. I just removed the decorators.
+    python -m smtpd -n -c DebuggingServer localhost:1025
+
+If you prefer to use your own mailserver, simply add your settings to `settings.py`.
